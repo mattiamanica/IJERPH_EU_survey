@@ -1,0 +1,713 @@
+---
+title: "Untitled"
+author: "MM"
+date: "14/4/2020"
+output: word_document
+
+---
+
+```{r setup, include=FALSE, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(here)
+source(here("script","mapfunction.R"))
+
+library(rgdal)
+library(tidyverse)
+library(gridExtra)
+library(xlsx)
+library(rworldmap)
+library(viridis)
+## create 'rworldmap' world map
+worldMap <- getMap()
+# path input C:\Users\manicam\Documents\ANALISI\Questionari
+
+
+
+qlist <- read.csv(here("data","Question_List.csv"),sep=";",stringsAsFactors = TRUE)
+qloc  <- read.csv(here("data","Locations.csv"),sep=";",stringsAsFactors = TRUE)
+names(qloc)[1] <- "asnswerno"
+qloc$asnswerno <- as.factor(qloc$asnswerno)
+
+dbraw  <- read.csv(here("data","DataQ.csv"),sep=";",stringsAsFactors = TRUE)
+
+names(dbraw)[21] <- "Consent"
+levels(dbraw$Consent)
+
+names(dbraw)[194] <- "Involved"
+
+```
+
+
+
+Aedes invasive mosquito in Europe: a questionnaire-based survey to increase understanding of surveillance and control actions.
+
+
+
+Introduction
+
+
+
+
+Materials and Methods
+
+The survey was designed within the framework of AIM Cost Action CA17108, an European funded international project aiming at developing and strengthening scientific networks. The survey was developed following ...
+
+
+Modified Delphi procedures:  
+Trial Questionnaire sent to superusers (Eva Veronesi)
+Questionnaire revised and validated with superusers (Task  leaders)
+Questionnaire implemented online (Task Leaders)
+
+
+
+The survey was designed to seek information regarding all aspects of Aedes invasive mosquito in Europe, investigating the spectrum of surveillance and control actions in place in different countries. 
+The survey was distributed to mosquito experts across Europe during the first AIM management committee meeting that took place in Greece in February 2019 or via email and personal interviews. 
+Questionnaire administered at 1st Annual Network Meeting Session
+Additional respondents suggested by initial respondents (Francis Schaffner)
+ECDC National Focal points requested to participate (Olivier Briet)
+Questionnaire used by ECDC for Culex
+
+
+The core questionnaire was structured ....
+
+Questionnaire details:  
+	26 questions, multipart, “if YES,”
+	Multiple choice with opportunity for questions, comments for most     questions
+	Eusurvey (not survey monkey etc)
+		Inbuilt basic filtering and analyses
+	Online with .doc (not pdf) backup 
+	Doc sent in advance
+	Questions explained to (most) respondents
+
+
+Moreover, the questionnaire included a total of 19 questions describing participants experience, working location and skillset plus 5 more question regarding privacy issues, contact information and informed consent.
+
+
+A first summary of the results regarding surveillance and control schemes, including innovative methods for control and citizen science initiatives, is hereby presented.
+
+
+```{r, echo = FALSE}
+db <- dbraw %>% filter(!is.na(dbraw$wwlocad1) & wwlocad1!= "INT" & wwlocad1!= "") %>%
+  filter(Consent == "Yes, AIMCOST may analyse my answers") %>%
+  filter(Involved == "Yes I am involved")%>%
+  droplevels()#%>% select(col_to_keep)%>% droplevels()
+names(db)[2] <-"Location"
+
+#levels(dbraw$wwlocad1)[!(levels(dbraw$wwlocad1) %in% levels(db$Location))]
+
+levels(db$Gender..optional.) <- c("No","No","No","No","F","F","F","F","F","F","F","No","M","M","M","M","M","M","No","No")
+
+# 
+ix <- which(!(db$Location %in% worldMap$NAME))
+levels(db$Location)[levels(db$Location)%in%db$Location[ix]]<- c("Bosnia and Herz.","Czech Rep.","Liechtenstein","Netherlands","United Kingdom")
+# 
+ show <- which(worldMap$NAME %in% db$Location)
+# 
+
+```
+
+Result
+
+One hundred and fifty five experts in medical entomology, public health and integrated vector management participated in the survey.  All participants gave their consent to use the answers  provided in an analysis with the aim to harmonise and disseminate Aedes invasive mosquito surveillance and control guidelines.
+
+We included in the following analysis only participants that stated an involvement in mosquito monitoring  or surveillance (n = `r sum(dbraw$Involved == "Yes I am involved")`,  `r round(100*sum(dbraw$Involved == "Yes I am involved")/nrow(dbraw),1) `% ) and indicated the country which were providing information for, leaving us with `r nrow(db)` participants. Results including all the partcipants are available in supplementary materials.
+
+We collected information from `r length(unique(db$Location))` countries (European and neighbouring, Figure 1) and to the best of our knowledge this is the first extensive and inclusive survey of its kind. 
+
+
+```{r figure1, fig.width = 8, fig.height = 6}
+participants <- db %>% group_by(Location) %>% count()%>%
+  mutate(resp = factor(n,levels =0:11))
+#print(participants,n=50)
+map_f(participants,participants$resp,"yes")+
+  scale_fill_brewer(palette = "Blues") +
+  guides(fill=guide_legend(title="Respondents"))
+```
+
+Figure 1. Number of respondents by country.
+
+
+
+Most of the respondents had an academic background (`r round(100*sum(db$instutution == "ACAD")/nrow(db),1) `%) or entomological skills (`r round(100*sum(db$skillset == "ENT")/nrow(db),1) `%), with `r round(100*sum(db$instutution == "ACAD" & db$skillset == "ENT")/nrow(db),1)` having both. The rest were working in the public (`r round(100*sum(db$instutution == "PUBL")/nrow(db),1) `%)  or private (`r round(100*sum(db$instutution == "PRIV")/nrow(db),1) `%) sector and the second main skillset was epidemiology (`r round(100*sum(db$skillset == "EPI")/nrow(db),1) `%).
+
+Respondents year's of experience was `r round(100*(as.numeric(table(db$experience)[1]))/nrow(db),1)` % < 10 years `r round(100*(as.numeric(table(db$experience)[2]))/nrow(db),1)` % between 10 to 20 years and `r round(100*(as.numeric(table(db$experience)[3]))/nrow(db),1)` % above 20 years.
+
+Information regarding gender was optional, `r round(100*(as.numeric(table(db$Gender..optional.)[2]))/nrow(db),1)` % respondents were females, `r round(100*(as.numeric(table(db$Gender..optional.)[3]))/nrow(db),1)` % respondents were males and `r round(100*(as.numeric(table(db$Gender..optional.)[1]))/nrow(db),1)` % did not provide this information.
+
+
+
+Presence of Aedes invasive mosquito 
+```{r q1}
+col_to_keep <- c(1:ncol(dbraw))[qlist$Questno %in% c("A","1")]
+db1 <- db %>%  select(col_to_keep)%>% droplevels()
+names(db1)[21] <- "Presence"
+names(db1)[22] <- "aegypti"
+names(db1)[23] <- "albopictus"
+names(db1)[24] <- "japonicus"
+names(db1)[25] <- "koreicus"
+
+levels(db1$aegypti)[1] <- "NoAnswer"
+levels(db1$albopictus)[1]<- "NoAnswer"
+levels(db1$japonicus)[1]<- "NoAnswer"
+levels(db1$koreicus)[1]<- "NoAnswer"
+
+
+ae <- db1 %>% group_by(Location,Presence,aegypti) %>% count() %>%
+  pivot_wider(names_from = aegypti,values_from =  n)
+al <- db1 %>% group_by(Location,Presence,albopictus) %>% count() %>%
+  pivot_wider(names_from = albopictus,values_from =  n)
+ja <- db1 %>% group_by(Location,Presence,japonicus) %>% count() %>%
+  pivot_wider(names_from = japonicus,values_from =  n)
+ko <- db1 %>% group_by(Location,Presence,koreicus) %>% count() %>%
+  pivot_wider(names_from = koreicus,values_from =  n)
+
+ae$Species <-factor("aegypti",levels= c( "albopictus","aegypti","japonicus", "koreicus"))
+al$Species <-factor("albopictus",levels= c( "albopictus","aegypti","japonicus", "koreicus"))
+ja$Species <-factor("japonicus",levels= c( "albopictus","aegypti","japonicus", "koreicus"))
+ko$Species <-factor("koreicus",levels= c( "albopictus","aegypti","japonicus", "koreicus"))
+
+```
+
+Only participants from `r  db1 %>% filter(Presence == "No") %>%  group_by(Location)%>% count() %>% nrow(.)` countries (`r  unique(db1$Location[db1$Presence == "No"])`) did not report any Aedes invasive species, all other reported at least sporadic introduction when not already established population (supplementary table 1). Figure 2 show the countries for each species where at least one participant indicated established population or alternatively sporadic introduction.
+
+```{r}
+aeg <- 
+  db1 %>% filter(Presence == "Yes") %>% 
+  group_by(Location,aegypti) %>% count() %>%
+  pivot_wider(id_cols =Location, names_from = aegypti,values_from = n) %>%
+  mutate(confirmed = factor(case_when(`Established Populations`>0 ~ "Established",
+                                      `Sporadic records only`>0 & is.na(`Established Populations`)  ~ "Sporadic",
+                                      None >0 &is.na(`Sporadic records only`) & is.na(`Established Populations`)  ~ "Absent",
+                                      TRUE~"Not Available"),
+                            levels = c("Established","Sporadic","Absent","Not Available"))) %>% 
+  mutate(Species = "Aedes aegypti")
+
+alb <- 
+  db1 %>% filter(Presence == "Yes") %>% 
+  group_by(Location,albopictus) %>% count() %>%
+  pivot_wider(id_cols =Location, names_from = albopictus,values_from = n) %>%
+  mutate(confirmed = factor(case_when(`Established Populations`>0 ~ "Established",
+                                      `Sporadic records only`>0 & is.na(`Established Populations`)  ~ "Sporadic",
+                                      None >0 &is.na(`Sporadic records only`) & is.na(`Established Populations`)  ~ "Absent",
+                                      TRUE~"Not Available"),
+                            levels = c("Established","Sporadic","Absent","Not Available"))) %>% 
+  mutate(Species = "Aedes albopicuts")
+
+
+kor <-  db1 %>% filter(Presence == "Yes") %>% 
+  group_by(Location,koreicus) %>% count() %>%
+  pivot_wider(id_cols =Location, names_from = koreicus,values_from = n) %>%
+  mutate(confirmed = factor(case_when(`Established Populations`>0 ~ "Established",
+                                      `Sporadic records only`>0 & is.na(`Established Populations`)  ~ "Sporadic",
+                                      None >0 &is.na(`Sporadic records only`) & is.na(`Established Populations`)  ~ "Absent",
+                                      TRUE~"Not Available"),
+                            levels = c("Established","Sporadic","Absent","Not Available")))  %>% 
+  mutate(Species = "Aedes koreicus")
+
+
+
+jap <- db1 %>% filter(Presence == "Yes") %>% 
+  group_by(Location,japonicus) %>% count() %>%
+  pivot_wider(id_cols =Location, names_from = japonicus,values_from = n) %>%
+  mutate(confirmed = factor(case_when(`Established Populations`>0 ~ "Established",
+                                      `Sporadic records only`>0 & is.na(`Established Populations`)  ~ "Sporadic",
+                                      None >0 &is.na(`Sporadic records only`) & is.na(`Established Populations`)  ~ "Absent",
+                                      TRUE~"Not Available"),
+                            levels = c("Established","Sporadic","Absent","Not Available"))) %>% 
+  mutate(Species = "Aedes japonicus")
+
+tabX <- bind_rows(aeg,alb,kor,jap)
+
+
+#knitr::kable(tabX %>% select(-confirmed)%>% group_by(Location,Species) %>% summarise_all(.,sum))
+
+
+```
+
+It should be noted that for some European countries their territory extend also to tropical or sub-tropical regions (e.g. France, Portugal) and response indicating established population may refer to those area. Moreover, there is a worryingly indication by two participants of an established population of Ae. aegypti in Switzerland and Spain that should be further investigated and are likely to be a data-entering mistake. 
+
+
+```{r figure2, fig.width = 12, fig.height = 12,echo=FALSE}
+
+aeg <- 
+db1 %>% filter(Presence == "Yes") %>% 
+  group_by(Location,aegypti) %>% count() %>%
+  pivot_wider(id_cols =Location, names_from = aegypti,values_from = n) %>%
+  mutate(confirmed = factor(case_when(`Established Populations`>0 ~ "Established",
+                                      `Sporadic records only`>0 & is.na(`Established Populations`)  ~ "Sporadic",
+                                      None >0 &is.na(`Sporadic records only`) & is.na(`Established Populations`)  ~ "Absent",
+                                      TRUE~"Not Available"),
+         levels = c("Established","Sporadic","Absent","Not Available"))) %>% 
+   map_f(.,.$confirmed,"yes") +
+  scale_fill_brewer(palette  = "Reds",direction=-1)+
+  guides(fill=guide_legend(title="Presence"))+
+  theme(legend.position = "bottom")+
+  theme(axis.text = element_blank())+
+  ggtitle(expression(italic("Aedes aegypti")))
+
+
+
+alb <- 
+db1 %>% filter(Presence == "Yes") %>% 
+  group_by(Location,albopictus) %>% count() %>%
+  pivot_wider(id_cols =Location, names_from = albopictus,values_from = n) %>%
+  mutate(confirmed = factor(case_when(`Established Populations`>0 ~ "Established",
+                                      `Sporadic records only`>0 & is.na(`Established Populations`)  ~ "Sporadic",
+                                      None >0 &is.na(`Sporadic records only`) & is.na(`Established Populations`)  ~ "Absent",
+                                      TRUE~"Not Available"),
+         levels = c("Established","Sporadic","Absent","Not Available"))) %>% 
+   map_f(.,.$confirmed,"yes") +
+  scale_fill_brewer(palette  = "Reds",direction=-1,drop=FALSE)+
+  guides(fill=guide_legend(title="Presence"))+
+  theme(legend.position = "bottom")+
+  theme(axis.text = element_blank())+
+  ggtitle(expression(italic("Aedes albopictus")))
+
+kor <-  db1 %>% filter(Presence == "Yes") %>% 
+  group_by(Location,koreicus) %>% count() %>%
+  pivot_wider(id_cols =Location, names_from = koreicus,values_from = n) %>%
+  mutate(confirmed = factor(case_when(`Established Populations`>0 ~ "Established",
+                                      `Sporadic records only`>0 & is.na(`Established Populations`)  ~ "Sporadic",
+                                      None >0 &is.na(`Sporadic records only`) & is.na(`Established Populations`)  ~ "Absent",
+                                      TRUE~"Not Available"),
+         levels = c("Established","Sporadic","Absent","Not Available"))) %>% 
+   map_f(.,.$confirmed,"yes") +
+  scale_fill_brewer(palette  = "Reds",direction=-1)+
+  guides(fill=guide_legend(title="Presence"))+
+  theme(legend.position = "bottom")+
+  theme(axis.text = element_blank())+
+  ggtitle(expression(italic("Aedes koreicus")))
+
+
+
+jap <- db1 %>% filter(Presence == "Yes") %>% 
+  group_by(Location,japonicus) %>% count() %>%
+  pivot_wider(id_cols =Location, names_from = japonicus,values_from = n) %>%
+  mutate(confirmed = factor(case_when(`Established Populations`>0 ~ "Established",
+                                      `Sporadic records only`>0 & is.na(`Established Populations`)  ~ "Sporadic",
+                                      None >0 &is.na(`Sporadic records only`) & is.na(`Established Populations`)  ~ "Absent",
+                                      TRUE~"Not Available"),
+         levels = c("Established","Sporadic","Absent","Not Available"))) %>% 
+   map_f(.,.$confirmed,"yes") +
+  scale_fill_brewer(palette  = "Reds",direction=-1)+
+  guides(fill=guide_legend(title="Presence"))+
+  theme(legend.position = "bottom")+
+  theme(axis.text = element_blank())+
+  ggtitle(expression(italic("Aedes japonicus")))
+
+
+grid.arrange(alb,aeg,kor,jap,ncol=2)
+
+```
+
+Figure 2. Reported Aedes invasive populations according to respondents at country level.  
+
+
+Aedes invasive mosquito monitoring or surveillance.
+
+```{r q7}
+col_to_keep <- c(1:ncol(dbraw))[qlist$Questno %in% c("A","7","7a","7b","7c","7d")]
+db7 <- db %>%  select(all_of(col_to_keep))%>% droplevels()
+names(db7)[seq(22,42,by=3)] <- c("Larval.Sampling","Ovitrap","BG.Sentinel",
+                                 "CO2.Baited.Traps","Sticky.Traps","Human.Landing.Catches",
+                                 "Other")
+
+levels(db7$Larval.Sampling) <- c(NA,"Y","N","N","Y","Y","Y","Y","Y")
+levels(db7$Ovitrap) <- c(NA,"Y","Y","Y","N","N","Y","Y","Y","Y")
+levels(db7$BG.Sentinel)<- c(NA,"Y","N","Y","Y","Y","Y","Y")
+levels(db7$Sticky.Traps)<- c(NA,"N","N","Y")
+levels(db7$Human.Landing.Catches)<- c(NA,"N","N","Y","Y")
+levels(db7$Other) <- c("","","Aspirator","EVS - GAT","EVS - GAT","GAT","GAT","GAT","GAT","GAT","Magnet","N","N","Passive","Triple Trap","Aspirator","Y","Y","CDC","CDC")
+
+names(db7)[seq(23,43,by=3)] <- paste(c("Larval.Sampling","Ovitrap","BG.Sentinel",
+                                       "CO2.Baited.Traps","Sticky.Traps","Human.Landing.Catches",
+                                       "Other"),"Type",sep=".")
+
+# levels(db7$Larval.Sampling.Type)
+# levels(db7$Ovitrap.Type)
+# levels(db7$BG.Sentinel.Type)
+# levels(db7$CO2.Baited.Traps.Type)
+# levels(db7$Sticky.Traps.Type)
+# levels(db7$Human.Landing.Catches.Type)
+
+
+dbtr <- db7[,seq(23,43,by=3)]
+
+dbtr2 <- dbtr %>% 
+  lapply(table) %>% 
+  lapply(as.data.frame)%>% 
+  Map(cbind,var = names(dbtr),.) %>% 
+  bind_rows() %>% 
+  group_by(var) %>% 
+  mutate(pct = round(100* Freq / sum(Freq),1))
+
+#write.table(dbtr2,file = "Table_trap_number.txt",quote=FALSE,row.names = FALSE,sep="|")
+```
+Whitin participants who stated to be involved in mosquito monitoring, ovitrap was the most used trap types (`r  round(100*(sum(db7$Ovitrap=="Y",na.rm=T)/nrow(db7)),1)`%), while BG-Sentinel was the most used trap for adult collection (`r  round(100*(sum(db7$BG=="Y",na.rm=T)/nrow(db7)),1)`%). Figure 3 shows the cited collection methods cited by at least 3 participants. However, it should be noted that 
+`r  round(100*(1-length(db7$Other[db7$Other =="" |db7$Other=="N"|db7$Other=="GAT"|db7$Other=="CDC"|db7$Other=="EVS - GAT "])/nrow(db7)),1)` % of participants also mentioned other collection methods such as Aspirator or Magnet Trap.
+
+```{r figure3, fig.width = 5, fig.height = 5,echo=FALSE}
+used <- function(x){a <-if_else(x=="Y",1,0)
+round(100*sum(a,na.rm=T)/nrow(db7),2)}
+gat <- function(x){a <-if_else((x=="GAT"|x=="EVS - GAT"),1,0)
+sum(a,na.rm=T)}
+cdc <- function(x){a <-if_else((x=="CDC"),1,0)
+sum(a,na.rm=T)}
+
+  
+dd <- db7 %>% 
+  summarise(Larval = used(Larval.Sampling),
+            Ovitrap = used(Ovitrap),
+            BG = used(BG.Sentinel),
+            CO2 = used(CO2.Baited.Traps),
+            Sticky = used(Sticky.Traps),
+            HLC = used(Human.Landing.Catches),
+            GAT = round(100*gat(Other)/nrow(db7),2),
+            CDC = round(100*cdc(Other)/nrow(db7),2))%>%
+  pivot_longer(cols = Larval:CDC,
+               names_to = "Traps")%>%
+  mutate(hi = (value+1.96*binomCI(value)),
+         lo = if_else(value-1.96*binomCI(value)<0,0,value-1.96*binomCI(value))) %>%
+  arrange(desc(value)) %>%
+  ggplot(.,aes(x=reorder(Traps, value),y=value))+
+  ylab("Percentage of respondents (%)")+ylim(c(0,100))+xlab("Collection methods")+
+  geom_bar(stat = "identity",fill="lightblue",col="black")+theme_bw()+
+  #geom_errorbar(aes(ymin=lo,ymax=hi),width=0.2)+
+  coord_flip()
+
+```
+
+Figure 3. Percentage of collection methods used for monitoring or surveillance of Aedes invasive species
+
+
+Looking at the collection method splitted by country (Figure 4) shows that different methods are used together 
+
+```{r figure4, fig.width = 8, fig.height = 10,echo=FALSE}
+
+used <- function(x){a <-if_else(x=="Y",1,0)
+sum(a,na.rm=T)}
+
+dbtrap <- db7 %>% 
+  #filter(Involved == "Yes I am involved") %>%
+  group_by(Location) %>% 
+  summarise(Larval = used(Larval.Sampling),
+            Ovitrap = used(Ovitrap),
+            BG = used(BG.Sentinel),
+            CO2 = used(CO2.Baited.Traps),
+            Sticky = used(Sticky.Traps),
+            HLC = used(Human.Landing.Catches),
+            GAT = gat(Other),
+            CDC = cdc(Other))%>%
+  pivot_longer(cols = Larval:CDC,
+               names_to = "Traps" )%>%
+   droplevels() 
+dbtrap$Traps <- factor(dbtrap$Traps,levels = c("Ovitrap","BG","Larval","CO2","HLC","Sticky","GAT","CDC"))
+
+ggplot(dbtrap,aes(x= Traps, y=value,fill=Traps)) + theme_bw()+
+  geom_bar(stat="identity",col="black")+facet_wrap(~Location)+
+  scale_y_continuous(breaks= c(0,4,8,12))+
+  xlab("Collection methods")+ylab("Number of participants using the method")+
+  coord_flip()+scale_fill_viridis_d()+theme(legend.position = "none")+
+  guides(fill=guide_legend(title="Collection Methods"))
+```
+
+Figure 4. Number of participating indicating each collection method by country 
+
+
+Data and outcomes generated by these collection methods are reported or known to be reported by `r  round(100*(table(db7[,44])/length(db7[,44]))[3],1)` % of participants. However, as shown by Figure 5 there are some inconsistency in few countries between participants, probably due to local or regional differences. 
+```{r}
+dbtrap3 <- db7 %>% 
+  #filter(Involved == "Yes I am involved") %>%
+  group_by(Location) %>% 
+  summarise(Larval = used(Larval.Sampling),
+            Ovitrap = used(Ovitrap),
+            BG = used(BG.Sentinel),
+            CO2 = used(CO2.Baited.Traps),
+            Sticky = used(Sticky.Traps),
+            HLC = used(Human.Landing.Catches),
+            GAT = gat(Other),
+            CDC = cdc(Other))
+dbtrap4 <- data.frame(Type  = names(dbtrap3)[2:9],
+                      value = apply(dbtrap3[,2:9]>0,2,sum)
+)
+
+ff <- ggplot(dbtrap4,aes(x= reorder(Type,value), y=value)) + theme_bw()+
+  geom_bar(stat="identity",fill="lightblue",col="black")+
+  xlab("Collection methods")+ylab("Number of countries using the method")+
+  coord_flip()
+
+grid.arrange(dd,ff)
+```
+```{r}
+names(db7)[43] <- "traps25km"
+
+table(db7$traps25km)
+
+
+table(db7$Location,db7$traps25km)
+
+db7b <- db7 %>% group_by(Location,traps25km) %>% count() %>% 
+  group_by(Location)%>% mutate(tot = sum(n),
+                               freq = n/sum(n)) %>% 
+  mutate(traps25km2 =if_else(traps25km %in% c("I don't know", "Less than 1"),-n,n) ,
+         freq2 =if_else(traps25km %in% c("I don't know", "Less than 1"),-freq,freq) )
+
+db7b$traps25km <- factor(db7b$traps25km,levels=levels(db7b$traps25km)[c(5,2,1,4,3)])
+
+# ggplot(db7b,aes(x= traps25km, y=n,fill=traps25km)) + theme_bw()+
+#   geom_bar(stat="identity",col="black")+facet_wrap(~Location)+
+#   scale_y_continuous(breaks= c(0,4,8,12))+
+#   xlab("Collection methods")+ylab("Number of answer")+
+#   coord_flip()+scale_fill_viridis_d()+theme(legend.position = "none")+
+#   guides(fill=guide_legend(title="Number of traps per 25 squared km"))
+# 
+# 
+# range(db7b$traps25km2)
+# range(db7b$tot)
+
+ggplot(db7b,aes(x= Location, y=traps25km2,fill=traps25km)) + theme_bw()+
+  geom_bar(stat="identity",col="black")+
+  scale_y_continuous(breaks= c(-4,-2,0,2,4,6,8),labels = c(4,2,0,2,4,6,8))+
+  scale_x_discrete(limits = rev(levels(db7b$Location)))+
+  xlab("")+ylab("Number of answer")+
+  coord_flip()+scale_fill_brewer(type="div",direction = -1)+theme(legend.position = "top")+
+  guides(fill=guide_legend(title="Number of traps\n per 25 squared km"))
+
+```
+
+
+```{r figure5, fig.width = 6, fig.height = 5,echo=FALSE}
+names(db7)[44] <- "Reported"
+levels(db7$Reported)[1] <- "Unknown"
+db7 %>% 
+  group_by(Location,Reported) %>% count() %>%
+  pivot_wider(id_cols = Location, names_from = Reported, values_from = n)%>%
+  mutate(repo = factor(case_when( Yes >0  & is.na(No) & is.na(Unknown) ~ "Yes",
+                           Yes >0  & !is.na(No) & is.na(Unknown) ~ "Yes/No",
+                           Yes >0  & is.na(No) & !is.na(Unknown) ~ "Yes/don't know",
+                           is.na(Yes)  & No>0 & is.na(Unknown) ~ "No",
+                           is.na(Yes)  & Unknown>0 & is.na(No) ~ "Don't know",
+                           TRUE ~"No/don't know"),
+                       levels = c("Yes","Yes/don't know","Yes/No","No","No/don't know","Don't know"))) %>%
+map_f(.,.$repo,"yes")+
+  scale_fill_viridis_d(direction = -1)+
+  theme(legend.position = "right")+
+  guides(fill=guide_legend(title="Are data and\noutcomes\nreported?"))
+
+how <- as.data.frame(table(unlist(strsplit(as.character(db7[,46]),";")))) %>% arrange(desc(Freq))
+```
+
+Figure 5. Map showing if data and outcome are reported.
+
+When these data and outcomes are presented, the methods used are the following `r  paste(how$Var1,": ",round(100*how$Freq/sum(db7$Reported=="Yes"),1),"%",sep="")`.
+
+<!-- ```{r figure6, fig.width = 6, fig.height = 4,echo=FALSE} -->
+<!-- as.data.frame(table(unlist(strsplit(as.character(db7[,46]),";")))) %>% -->
+<!--   mutate(value = 100*Freq/nrow(db7), -->
+<!--          hi = (value+1.96*binomCI(value)), -->
+<!--          lo = if_else(value-1.96*binomCI(value)<0,0,value-1.96*binomCI(value)))%>% -->
+<!--   ggplot(.,aes(x=reorder(Var1, value),y=value))+ -->
+<!--   ylab("Percentage (%)")+ylim(c(0,100))+xlab("How are the surveillance data presented?")+ -->
+<!--   geom_bar(stat = "identity",fill="lightblue",col="black")+theme_bw()+ -->
+<!--   geom_errorbar(aes(ymin=lo,ymax=hi),width=0.2)+coord_flip() -->
+
+<!-- ``` -->
+<!-- Figure 6 -->
+
+
+Are you aware of any citizen science project/activity complementing Aedes invasive mosquito MONITORING/SURVEILLANCE in your country/region?
+
+
+```{r q8} 
+
+col_to_keep <- c(1:ncol(dbraw))[qlist$Questno %in% c("A","8","8a","8b")]
+
+db8 <- db %>%  select(col_to_keep)%>% droplevels()
+names(db8)[21] <- "citsci"
+names(db8)[22] <- "surv"
+names(db8)[23] <- "added.value"
+names(db8)[24] <- "details"
+
+citz <- as.data.frame(table(unlist(strsplit(as.character(db8$added.value),";"))))
+
+
+
+
+```
+
+
+
+Citizen science projects and activities complementing Aedes invasive mosquito monitoring and surveillance are increasing in Europe with . `r  round(100*table(db8$citsci)[3]/nrow(db8),1) `% participants from 14 countries (Figure 7) being aware of at least one  citizen science initiative.  `r round(100*table(db8$surv)[4]/sum(db8$citsci=="Yes"),1) ` % of them also stated that results obtained from citizen were integrated in the officiale surveillance programme. Moreover, the `r  sum(db8$citsci=="Yes") ` participants that were awere of at least a citizen science project, listed several added values of integrating citizen science project in official surveillance scheme such as `r  paste(citz$Var1,": ",round(100*citz$Freq/sum(db8$citsci=="Yes"),1),"%",sep="")`.
+
+
+
+```{r figure6, fig.width = 6, fig.height = 6,echo=FALSE}
+
+
+
+used <- function(x){a <-if_else(x=="Yes",1,0)
+sum(a,na.rm=T)}
+
+dbtrap <- db8 %>% filter(Location != "" & Location != "INT") %>% group_by(Location) %>% 
+  summarise(Total = length(citsci),
+            CitizeScience = used(citsci),
+            Surveillance = used(surv),
+            FreqC = 100*used(citsci)/length(citsci),
+            FreqS = 100*used(surv)/length(citsci))%>%
+  droplevels()
+dbtrap2 <- gather(dbtrap,Trap,Freq,CitizeScience :FreqS, factor_key=TRUE)
+
+
+ggplot() +theme_bw()+ 
+  geom_bar(data = dbtrap, aes(x=Location, y= Total),
+           width = 1,stat = "identity",fill = "white",col="black") +
+  geom_bar(data = dbtrap, aes(x=Location, y= CitizeScience),
+           width = 1,stat = "identity",fill = "grey80",col="black") +
+  geom_bar(data = dbtrap, aes(x=Location, y= Surveillance),
+           width = 1,stat = "identity",fill = "black",col="black") +
+  theme(axis.line = element_blank(), 
+        plot.title = element_text(hjust=0.5)) + 
+  labs(fill="class", 
+       x=NULL, 
+       y="Number of participants", 
+       title="", 
+       caption="") +
+  scale_y_continuous(breaks=c(0,2,4,6,8,10,12)) +coord_flip()
+```
+
+Figure 6. Number of participants per country (white bar) who were aware of a citizen project (grey bar) and known that results were integrated in the official surveillance scheme (black bar).
+
+
+
+
+
+Action  taken in your country/region based on MONITORING/SURVEILLANCE results? And scenario
+
+
+
+```{r q9}
+
+col_to_keep <- c(1:ncol(dbraw))[qlist$Questno %in% c("A","9","9a")]
+
+db9 <- db %>%  select(col_to_keep)%>% droplevels()
+
+names(db9)[21]<- "Action"
+names(db9)[22]<- "Scenario"
+
+citz <- as.data.frame(table(unlist(strsplit(as.character(db9$Scenario),";"))))
+citz$Freq2 <- round(100* citz$Freq/sum(db9$Action=="Yes"),1)
+sys <- unique(unlist(strsplit(as.character(db9$Scenario),";")))
+
+```
+
+We also investigated if any subsequent action is taken based on monitoring and surveillance results. According to `r  round(100*table(db9$Action)[3]/nrow(db9),1) `% participants, monitoring and surveillance results inform different control intervention which can be described by the following scenario: Control of imported or local Aedes-borne human arbovirus infection cases,  Control of Aedes invasive mosquito density/ nuisance, Control of introduction of Aedes invasive mosquitoes at points of entry, and none of the above.
+Nuisance and density control was the most cited (`r citz$Freq2[1]`%) when some action is taken, followed by control of introduction (`r citz$Freq2[3]`%) and control of imported or local Aedes-borne infections (`r citz$Freq2[2]`%). Participants were allowed to indicate more than one action and the most frequent combination (20.4%) included all the three action mentioned above Figure 7.
+
+
+
+```{r figure7,fig.width = 8, fig.height = 6}
+sws <- db9 %>% mutate(nuisance  = str_count(as.character(Scenario), sys[1]),
+               introduction  = str_count(as.character(Scenario), sys[2]),
+               arbovirus  = str_count(as.character(Scenario), sys[3]),
+               none = str_count(as.character(Scenario), sys[4]),
+               action = factor(case_when(Action == "Yes"~"Yes",
+                                         TRUE ~ "No/don't know"),
+                               levels = c("Yes","No/don't know")))%>%
+  group_by(Location)%>%
+  summarise_at(vars(nuisance:none),max)%>%
+  mutate( Scenario = factor( case_when( 
+    nuisance == 0 & arbovirus == 1 & introduction == 0 ~ "Arbovirus",
+    nuisance == 1 & arbovirus == 1 & introduction == 0 ~ "Arbovirus/Nuisance",
+    nuisance == 0 & arbovirus == 1 & introduction == 1 ~ "Arbovirus/Introduction",
+    nuisance == 1 & arbovirus == 1 & introduction == 1 ~ "Arbovirus/Nuisance/Introduction",
+    nuisance == 1 & arbovirus == 0 & introduction == 0~ "Nuisance",
+    nuisance == 1 & arbovirus == 0 & introduction == 1~ "Nuisance/Introduction",
+    nuisance == 0 & arbovirus == 0 & introduction == 1~ "Introduction",
+    none == 1 & nuisance == 0 & introduction == 0 & arbovirus == 0 ~ "None of above",
+    TRUE ~ "No Action"))#,
+    #levels = c("Arbovirus", "Nuisance", "Introduction","Only Nuisance", "None of above","No Action"))   
+  )
+
+
+db9 %>% mutate(nuisance  = str_count(as.character(Scenario), sys[1]),
+               introduction  = str_count(as.character(Scenario), sys[2]),
+               arbovirus  = str_count(as.character(Scenario), sys[3]),
+               none = str_count(as.character(Scenario), sys[4]),
+               action = factor(case_when(Action == "Yes"~"Yes",
+                                         TRUE ~ "No/don't know"),
+                               levels = c("Yes","No/don't know")))%>%
+  group_by(Location)%>%
+  summarise_at(vars(nuisance:none),max)%>%
+  mutate( Scenario = factor( case_when( 
+    nuisance == 0 & arbovirus == 1 & introduction == 0 ~ "Arbovirus",
+    nuisance == 1 & arbovirus == 1 & introduction == 0 ~ "Arbovirus/Nuisance",
+    nuisance == 0 & arbovirus == 1 & introduction == 1 ~ "Arbovirus/Introduction",
+    nuisance == 1 & arbovirus == 1 & introduction == 1 ~ "Arbovirus/Nuisance/Introduction",
+    nuisance == 1 & arbovirus == 0 & introduction == 0~ "Nuisance",
+    nuisance == 1 & arbovirus == 0 & introduction == 1~ "Introduction/Nuisance",
+    nuisance == 0 & arbovirus == 0 & introduction == 1~ "Introduction",
+    none == 1 & nuisance == 0 & introduction == 0 & arbovirus == 0 ~ "None of above",
+    TRUE ~ "No Action"),
+    levels = c("Arbovirus/Nuisance/Introduction","Arbovirus/Nuisance", "Arbovirus/Introduction","Arbovirus","Nuisance", "Introduction/Nuisance","Introduction", "None of above","No Action"))   
+  ) %>%
+  map_f(.,.$Scenario,"yes")+
+  #scale_fill_viridis_d(direction=-1)+
+  scale_fill_brewer(type="div")+
+  #scale_fill_brewer(palette = "Reds",direction=-1)+
+  guides(fill=guide_legend(title="Scenario"))
+
+
+```
+Figure 7. Map of scenario where action are taken based on mosquito monitoring and surveillance.
+
+
+
+important to have citizens involved in Aedes invasive mosquito surveillance
+
+```{r q24}
+
+col_to_keep <- c(1:ncol(dbraw))[qlist$Questno %in% c("A","24")]
+
+db24 <- db %>%  select(col_to_keep)%>% droplevels()
+
+names(db24)[21:25] <- c("Surveillance",
+                 "Source Reduction","Larval Control","Biological Control",
+                 "Mass.Trapping")
+likdb <- db24 %>% select(Surveillance:Mass.Trapping)%>%
+  pivot_longer(names_to = "Type",Surveillance:Mass.Trapping) %>%
+  group_by(Type,value) %>% count() %>%
+  #print(.,n=50)%>%
+  pivot_wider(names_from = value,values_from = n)%>%
+  mutate(ix = `Strongly agree` +`Agree` )%>%
+ arrange(desc(ix)) %>%select(-ix)
+
+
+likdb2<- likdb[,c(1,6,3,4,2,5)]
+if(is.na(likdb2[1,2])) likdb2[1,2]<- 0
+origNames <- colnames(likdb2)
+
+
+
+```
+
+```{r figure8, fig.width=8,fig.height=6}
+suppressMessages(library(likert))
+suppressMessages(library(HH))
+likert(Type ~ .,likdb2, as.percent = TRUE,
+             xlim=c(-100,100),xlab="Percentage (%)", 
+             main = "Do you think it’s important to have citizens involved\nin Aedes invasive mosquito for: ",
+             auto.key=list(between=1, between.columns=2),
+             sub = "", panel=myPanelFunc,ylab="")
+
+detach("package:likert")
+detach("package:HH")
+detach("package:multcomp")
+detach("package:TH.data")
+detach("package:MASS")
+```
+
+Figure 8. Percieved importance of citizen in mosquito surveilance and control.
+
+
+
+

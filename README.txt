@@ -1,0 +1,1 @@
+Script for analyzing EU survey collected in the AIM COST project CA17107 (https://www.aedescost.eu/)
